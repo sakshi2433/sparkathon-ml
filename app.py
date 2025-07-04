@@ -142,6 +142,7 @@ if uploaded_file:
                 st.warning(f"⚠️ SKU `{row['sku_id']}` at `{row['warehouse_id']}` is short by **{abs(row['gap'])} units** (Demand: {int(row['forecasted_demand'])}, Inventory: {int(row['current_inventory'])})")
 
         st.subheader("📋 Transfer Table")
+        st.write("Columns in transfer_df:", transfer_df.columns.tolist())
         try:
             sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
             filtered_df = transfer_df.copy()
