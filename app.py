@@ -130,16 +130,9 @@ if uploaded_file:
 
         st.success("✅ Rebalance Transfer Plan Ready!")
 
-        # Safely normalize column names
-        if all(isinstance(col, str) for col in transfer_df.columns):
-            transfer_df.columns = transfer_df.columns.str.strip().str.lower()
-        else:
-            st.warning("⚠️ Column names in transfer_df are not all strings.")
-            st.write("Raw columns:", transfer_df.columns.tolist())
+        # Add immediate download button after plan generation
+        st.download_button("📥 Download Transfer Plan CSV", transfer_df.to_csv(index=False), file_name="transfer_plan.csv")
 
-        st.write("🔎 Columns in transfer_df:", transfer_df.columns.tolist())
-
-        # --- Alert Banner ---
         st.subheader("🚨 Low Stock Alerts")
         low_stock = gap_df[gap_df['gap'] < 0].copy()
         if low_stock.empty:
@@ -149,7 +142,7 @@ if uploaded_file:
                 st.warning(f"⚠️ SKU `{row['sku_id']}` at `{row['warehouse_id']}` is short by **{abs(row['gap'])} units** (Demand: {int(row['forecasted_demand'])}, Inventory: {int(row['current_inventory'])})")
 
         st.subheader("📋 Transfer Table")
-        if 'sku_id' in transfer_df.columns:
+        try:
             sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
             filtered_df = transfer_df.copy()
             if sku_filter != "All":
@@ -161,7 +154,6 @@ if uploaded_file:
             fig2 = px.bar(summary, x='sku_id', y='quantity', title='Total Quantity to be Transferred per SKU')
             st.plotly_chart(fig2, use_container_width=True)
 
-            st.download_button("📥 Download Transfer Plan", filtered_df.to_csv(index=False), file_name="transfer_plan.csv")
-        else:
-            st.error("❌ 'sku_id' column not found in transfer_df.")
-            st.write("Available columns:", transfer_df.columns.tolist())
+            st.download_button("📥 Download Filtered Transfer Plan", filtered_df.to_csv(index=False), file_name="filtered_transfer_plan.csv")
+        except Exception as e:
+            st.error(f"❌ Error displaying transfer table: {e}")
