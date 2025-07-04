@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Smart Forecast & Rebalancer", layout="wide")
 st.title("📊 Demand Forecasting & 🔁 Auto Rebalancer")
 
-# --- Upload orders.csv ---
+
 st.sidebar.header("📁 Upload Order Data")
 uploaded_file = st.sidebar.file_uploader("Upload your orders.csv", type=["csv"])
 
@@ -17,7 +17,7 @@ if uploaded_file:
 
     st.success("✅ orders.csv uploaded and loaded!")
 
-    # --- Forecasting Engine ---
+    
     st.header("📈 Forecasting Dashboard")
 
     def forecast_sku_wh(df, sku_id, wh_id, periods=30):
@@ -51,7 +51,7 @@ if uploaded_file:
 
     st.success("✅ Forecasts generated!")
 
-    # --- Forecast Plot ---
+    
     st.subheader("📊 Forecast Viewer")
     sku_options = full_forecast_df['sku_id'].unique()
     sku_selected = st.selectbox("Select SKU", sku_options)
@@ -66,10 +66,10 @@ if uploaded_file:
                   labels={'ds': 'Date', 'yhat': 'Predicted Demand'})
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Forecast CSV Download ---
+    
     st.download_button("📥 Download Full Forecast CSV", full_forecast_df.to_csv(index=False), file_name="full_forecast.csv")
 
-    # --- Auto Rebalancer ---
+    
     st.header("🔁 Auto Rebalancer")
 
     inventory_file = st.file_uploader("Upload warehouse_inventory.csv", type=["csv"], key='inv')
