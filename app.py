@@ -66,6 +66,9 @@ if uploaded_file:
                   labels={'ds': 'Date', 'yhat': 'Predicted Demand'})
     st.plotly_chart(fig, use_container_width=True)
 
+    # --- Forecast CSV Download ---
+    st.download_button("📥 Download Full Forecast CSV", full_forecast_df.to_csv(index=False), file_name="full_forecast.csv")
+
     # --- Auto Rebalancer ---
     st.header("🔁 Auto Rebalancer")
 
@@ -129,6 +132,7 @@ if uploaded_file:
 
         # Normalize column names
         transfer_df.columns = transfer_df.columns.str.strip().str.lower()
+        st.write("🔎 Columns in transfer_df:", transfer_df.columns.tolist())
 
         # --- Alert Banner ---
         st.subheader("🚨 Low Stock Alerts")
@@ -140,16 +144,19 @@ if uploaded_file:
                 st.warning(f"⚠️ SKU `{row['sku_id']}` at `{row['warehouse_id']}` is short by **{abs(row['gap'])} units** (Demand: {int(row['forecasted_demand'])}, Inventory: {int(row['current_inventory'])})")
 
         st.subheader("📋 Transfer Table")
-        st.write("Transfer Plan Columns:", transfer_df.columns.tolist())  # Debug line
-        sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
-        filtered_df = transfer_df.copy()
-        if sku_filter != "All":
-            filtered_df = filtered_df[filtered_df['sku_id'] == sku_filter]
-        st.dataframe(filtered_df, use_container_width=True)
+        if 'sku_id' in transfer_df.columns:
+            sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
+            filtered_df = transfer_df.copy()
+            if sku_filter != "All":
+                filtered_df = filtered_df[filtered_df['sku_id'] == sku_filter]
+            st.dataframe(filtered_df, use_container_width=True)
 
-        st.subheader("📊 Transfers by SKU")
-        summary = filtered_df.groupby('sku_id')['quantity'].sum().reset_index().sort_values(by='quantity', ascending=False)
-        fig2 = px.bar(summary, x='sku_id', y='quantity', title='Total Quantity to be Transferred per SKU')
-        st.plotly_chart(fig2, use_container_width=True)
+            st.subheader("📊 Transfers by SKU")
+            summary = filtered_df.groupby('sku_id')['quantity'].sum().reset_index().sort_values(by='quantity', ascending=False)
+            fig2 = px.bar(summary, x='sku_id', y='quantity', title='Total Quantity to be Transferred per SKU')
+            st.plotly_chart(fig2, use_container_width=True)
 
-        st.download_button("📥 Download Transfer Plan", filtered_df.to_csv(index=False), file_name="transfer_plan.csv")
+            st.download_button("📥 Download Transfer Plan", filtered_df.to_csv(index=False), file_name="transfer_plan.csv")
+        else:
+            st.error("❌ 'sku_id' column not found in transfer_df.")
+            st.write("Available columns:", transfer_df.columns.tolist())
