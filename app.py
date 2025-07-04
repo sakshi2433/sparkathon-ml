@@ -130,8 +130,13 @@ if uploaded_file:
 
         st.success("✅ Rebalance Transfer Plan Ready!")
 
-        # Normalize column names
-        transfer_df.columns = transfer_df.columns.str.strip().str.lower()
+        # Safely normalize column names
+        if all(isinstance(col, str) for col in transfer_df.columns):
+            transfer_df.columns = transfer_df.columns.str.strip().str.lower()
+        else:
+            st.warning("⚠️ Column names in transfer_df are not all strings.")
+            st.write("Raw columns:", transfer_df.columns.tolist())
+
         st.write("🔎 Columns in transfer_df:", transfer_df.columns.tolist())
 
         # --- Alert Banner ---
@@ -148,7 +153,7 @@ if uploaded_file:
             sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
             filtered_df = transfer_df.copy()
             if sku_filter != "All":
-                filtered_df = filtered_df[filtered_df['sku_id'] == sku_filter]
+                filtered_df = filtered_df[transfer_df['sku_id'] == sku_filter]
             st.dataframe(filtered_df, use_container_width=True)
 
             st.subheader("📊 Transfers by SKU")
