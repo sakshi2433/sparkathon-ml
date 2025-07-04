@@ -142,8 +142,9 @@ if uploaded_file:
                 st.warning(f"⚠️ SKU `{row['sku_id']}` at `{row['warehouse_id']}` is short by **{abs(row['gap'])} units** (Demand: {int(row['forecasted_demand'])}, Inventory: {int(row['current_inventory'])})")
 
         st.subheader("📋 Transfer Table")
-        st.write("Columns in transfer_df:", transfer_df.columns.tolist())
-        try:
+        if transfer_df.empty:
+            st.success("✅ No updated transfer tables required. All SKUs are sufficiently balanced across warehouses.")
+        else:
             sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
             filtered_df = transfer_df.copy()
             if sku_filter != "All":
@@ -156,5 +157,3 @@ if uploaded_file:
             st.plotly_chart(fig2, use_container_width=True)
 
             st.download_button("📥 Download Filtered Transfer Plan", filtered_df.to_csv(index=False), file_name="filtered_transfer_plan.csv")
-        except Exception as e:
-            st.error(f"❌ Error displaying transfer table: {e}")
