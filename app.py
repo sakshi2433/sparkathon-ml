@@ -108,19 +108,18 @@ if uploaded_file:
                 for _, shortage in shortage_whs.iterrows():
                     needed = abs(shortage['gap'])
                     for _, surplus in surplus_whs.iterrows():
-                        if surplus['gap'] <= 0:
-                            continue
-                        transfer_qty = min(needed, surplus['gap'])
-                        transfer_suggestions.append({
-                            'sku_id': sku,
-                            'from_warehouse': surplus['warehouse_id'],
-                            'to_warehouse': shortage['warehouse_id'],
-                            'quantity': int(transfer_qty)
-                        })
-                        surplus['gap'] -= transfer_qty
-                        needed -= transfer_qty
-                        if needed <= 0:
-                            break
+                        if surplus['gap'] > 0:
+                            transfer_qty = min(needed, surplus['gap'])
+                            transfer_suggestions.append({
+                                'sku_id': sku,
+                                'from_warehouse': surplus['warehouse_id'],
+                                'to_warehouse': shortage['warehouse_id'],
+                                'quantity': int(transfer_qty)
+                            })
+                            surplus_whs.loc[surplus_whs['warehouse_id'] == surplus['warehouse_id'], 'gap'] -= transfer_qty
+                            needed -= transfer_qty
+                            if needed <= 0:
+                                break
             return pd.DataFrame(transfer_suggestions)
 
         with st.spinner("Running rebalancer..."):
@@ -129,8 +128,6 @@ if uploaded_file:
             transfer_df.to_csv('transfer_plan.csv', index=False)
 
         st.success("✅ Rebalance Transfer Plan Ready!")
-
-        # Add immediate download button after plan generation
         st.download_button("📥 Download Transfer Plan CSV", transfer_df.to_csv(index=False), file_name="transfer_plan.csv")
 
         st.subheader("🚨 Low Stock Alerts")
@@ -142,7 +139,9 @@ if uploaded_file:
                 st.warning(f"⚠️ SKU `{row['sku_id']}` at `{row['warehouse_id']}` is short by **{abs(row['gap'])} units** (Demand: {int(row['forecasted_demand'])}, Inventory: {int(row['current_inventory'])})")
 
         st.subheader("📋 Transfer Table")
-        if transfer_df.empty:
+        if transfer_df.empty and not low_stock.empty:
+            st.warning("⚠️ Stock shortages detected, but no transfers were possible. Likely due to insufficient surplus at other warehouses.")
+        elif transfer_df.empty:
             st.success("✅ No updated transfer tables required. All SKUs are sufficiently balanced across warehouses.")
         else:
             sku_filter = st.selectbox("Filter by SKU", ["All"] + sorted(transfer_df['sku_id'].unique()))
